@@ -14,7 +14,7 @@ pub struct BusSchedule {
 struct BusRoute {
     ri: String,
     rs: String,
-    dn: String,
+    hs: String,
     t: Vec<BusTime>
 }
 
@@ -39,28 +39,30 @@ pub fn print_schedules(schedules: &Vec<BusSchedule>) {
     for schedule in schedules.iter() {
         println!("Stop #{} - {}", schedule.sc, schedule.sn);
         for route in schedule.r.iter() {
-            println!("{} {}", route.rs, route.dn);
+            println!("{} {}", route.rs, route.hs);
             let departing_times = route.t.iter()
-                .map(|time: &BusTime| {
-                    let parsed_time = NaiveTime::parse_from_str(&time.dt, "%H:%M")
-                        .expect("Failed to parse time");
-                    let mut hours_diff = (parsed_time.hour() as i32) - (now.hour() as i32);
-                    let mut minutes_diff = (parsed_time.minute() as i32) - (now.minute() as i32);
-                    if minutes_diff < 0 {
-                        minutes_diff = minutes_diff.rem_euclid(60);
-                        hours_diff -= 1;
-                    }
-                    hours_diff = hours_diff.rem_euclid(24);
-                    if hours_diff == 0 {
-                        format!("{}min", minutes_diff)
-                    } else {
-                        format!("{}hrs {}min", hours_diff, minutes_diff)
-                    }
-                })
+                .map(|time: &BusTime| format_departing_time(&time, &now))
                 .collect::<Vec<String>>()
                 .join(", ");
             println!("Departing: {}", departing_times);
         }
         println!();
+    }
+}
+
+fn format_departing_time(bus_time: &BusTime, now: &chrono::DateTime<Local>) -> String {
+    let parsed_time = NaiveTime::parse_from_str(&bus_time.dt, "%H:%M")
+        .expect("Failed to parse time");
+    let mut hours_diff = (parsed_time.hour() as i32) - (now.hour() as i32);
+    let mut minutes_diff = (parsed_time.minute() as i32) - (now.minute() as i32);
+    if minutes_diff < 0 {
+        minutes_diff = minutes_diff.rem_euclid(60);
+        hours_diff -= 1;
+    }
+    hours_diff = hours_diff.rem_euclid(24);
+    if hours_diff == 0 {
+        format!("{}min", minutes_diff)
+    } else {
+        format!("{}hrs {}min", hours_diff, minutes_diff)
     }
 }
